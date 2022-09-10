@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require File.join(File.dirname(__FILE__), '..', 'lib', 'bosh_loggalyzer')
+
+if ARGV.length == 0 || ["-h", "--help"].include?(ARGV[0])
+  puts <<-HELP
+Usage: 
+
+bosh_loggalyzer <path-to-log-file>
+  HELP
+  exit
+end
+
+log_file = ARGV[0]
+if !File.exists?(log_file)
+  puts "Could not find #{log_file}"
+  exit(1)
+end
+
+def seconds_to_minutes(seconds)
+  m = (seconds / 60).to_i
+  s = (seconds % 60).to_i
+  "#{m}m#{s.to_s.rjust(2, "0")}s"
+end
+
+loggalyzer = BoshLoggalyzer.new(log_file: log_file)
+results = loggalyzer.loggalyze_create_vm
+grouped_results = results.group_by { |r| r.instance_name }.sort_by {|k| k }.to_h
+grouped_results.each do |instance_name, create_vm_results|
+  puts instance_name
+  puts "-" * instance_name.length
+  create_vm_results.sort {|a,b| a.instance_number <=> b.instance_number }.each do |result|
+    puts "#{result.instance_name} (#{result.instance_number}) #{result.vm_guid}"
+    puts "create_vm CPI Time: #{seconds_to_minutes(result.cpi_logged_seconds_elapsed)}\n\n"
+  end
+  puts "\n"
+
+end
