@@ -25,13 +25,16 @@ end
 
 loggalyzer = BoshLoggalyzer.new(log_file: log_file)
 results = loggalyzer.loggalyze_create_vm
-grouped_results = results.group_by { |r| r.instance_name }.sort_by {|k| k }.to_h
+grouped_results = results.group_by { |r| r.instance_name }.sort_by { |k| k }.to_h
 grouped_results.each do |instance_name, create_vm_results|
   puts instance_name
   puts "-" * instance_name.length
-  create_vm_results.sort {|a,b| a.instance_number <=> b.instance_number }.each do |result|
+  create_vm_results.sort { |a, b| a.instance_number <=> b.instance_number }.each do |result|
     puts "#{result.instance_name} (#{result.instance_number}) #{result.vm_guid}"
-    puts "create_vm CPI Time: #{seconds_to_minutes(result.cpi_logged_seconds_elapsed)}\n\n"
+    unless result.failed?
+      puts "create_vm CPI Time: #{seconds_to_minutes(result.cpi_logged_seconds_elapsed)}"
+      puts "BOSH Director time to create vm: #{seconds_to_minutes(result.bosh_total_seconds_elapsed)}\n\n"
+    end
   end
   puts "\n"
 

@@ -12,7 +12,17 @@ describe BoshLoggalyzer do
     expect(first_vm_creation.vm_guid).to eq("vm-8e35021f-af04-4840-a088-2a0e86a8e4c9")
     expect(first_vm_creation.cpi_total_seconds_elapsed).to eq(17.27)
     expect(first_vm_creation.cpi_logged_seconds_elapsed).to eq(17.27)
+    expect(first_vm_creation.bosh_total_seconds_elapsed).to eq(69)
+    end
 
-
+  it "should 'work' even if a create_vm failed" do
+    log_file = File.join(project_root, 'spec', 'fixtures', 'failed_create_vm.log')
+    loggalyzer = BoshLoggalyzer.new(log_file: log_file)
+    result = loggalyzer.loggalyze_create_vm
+    failed_vm_create_result = result.detect { | r| r.instance_name == "mysql_proxy" && r.instance_number == 1 }
+    expect(failed_vm_create_result.instance_name).to eq("mysql_proxy")
+    expect(failed_vm_create_result.instance_guid).to eq("7cdaa6e2-f674-45fa-8dde-4843b4218e24")
+    expect(failed_vm_create_result.vm_guid).to eq("VM creation failed")
+    expect(failed_vm_create_result.failed?).to be(true)
   end
 end
