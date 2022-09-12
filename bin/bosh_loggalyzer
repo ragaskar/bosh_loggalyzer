@@ -28,12 +28,18 @@ results = loggalyzer.loggalyze_create_vm
 grouped_results = results.group_by { |r| r.instance_name }.sort_by { |k| k }.to_h
 grouped_results.each do |instance_name, create_vm_results|
   puts instance_name
-  puts "-" * instance_name.length
+  puts "-" * instance_name.length + "\n\n"
   create_vm_results.sort { |a, b| a.instance_number <=> b.instance_number }.each do |result|
-    puts "#{result.instance_name} (#{result.instance_number}) #{result.vm_guid}"
-    unless result.failed?
-      puts "create_vm CPI Time: #{seconds_to_minutes(result.cpi_logged_seconds_elapsed)}"
-      puts "BOSH Director time to create vm: #{seconds_to_minutes(result.bosh_total_seconds_elapsed)}\n\n"
+    puts "VM: #{result.instance_name}/#{result.instance_guid} (#{result.instance_number}) #{result.vm_guid}"
+    if !result.failed?
+      result.cpi_requests.each do |req|
+        puts "#{req.type}: logged: #{seconds_to_minutes(req.logged_seconds)}, observed: #{seconds_to_minutes(req.total_seconds_elapsed)}"
+      end
+      puts "\n"
+      puts "-> create_vm total CPI Time: logged: #{seconds_to_minutes(result.cpi_logged_seconds_elapsed)}, observed: #{seconds_to_minutes(result.cpi_total_seconds_elapsed)}"
+      puts "-> BOSH Director time to create vm: #{seconds_to_minutes(result.bosh_total_seconds_elapsed)}\n\n"
+    else
+      puts "-> VM creation failed\n\n"
     end
   end
   puts "\n"
